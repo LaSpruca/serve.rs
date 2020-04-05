@@ -1,5 +1,5 @@
 [package]
-name = "yes"
+name = "insult-webserver"
 version = "0.1.0"
 authors = ["Nathan Hare <nathanhare32@gmail.com>"]
 edition = "2018"

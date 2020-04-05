@@ -1,9 +1,11 @@
 extern crate chrono;
 
+pub mod thread_pool;
+
 use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
 use std::fs;
-use web_server::ThreadPool;
+use crate::thread_pool::ThreadPool;
 
 fn main() {
     let listener = match TcpListener::bind("192.168.1.72:80") {
