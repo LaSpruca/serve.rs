@@ -1,6 +1,7 @@
 extern crate chrono;
 
 pub mod thread_pool;
+pub mod config;
 
 use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
@@ -8,7 +9,8 @@ use std::fs;
 use crate::thread_pool::ThreadPool;
 
 fn main() {
-    let listener = match TcpListener::bind("192.168.1.72:80") {
+    let config = config::Config::new();
+    let listener = match TcpListener::bind(format!("{}:{}", config.ip, config.port)) {
         Ok(a) => a,
         Err(_) => {println!("DUMB BITCH"); std::process::exit(69)}
     };
@@ -24,6 +26,10 @@ fn main() {
             })
         }
     }
+}
+
+fn start_server() {
+
 }
 
 fn handle_connection(mut stream: TcpStream) {
