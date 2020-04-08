@@ -76,8 +76,8 @@ impl Request {
         String::from(path)
     }
 
-    pub fn get_value(&self, key: String) -> Option<String> {
-        let token = self.body.get(key.as_str());
+    pub fn get_value(&self, key: &str) -> Option<String> {
+        let token = self.body.get(key);
         let ok: &str;
         match token {
             Some(s) => {ok = s.as_str()},

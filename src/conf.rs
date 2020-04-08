@@ -20,7 +20,7 @@ impl Config {
         if !std::fs::metadata(&format!("{}/config.json", path)).is_ok() {
             let mut file = std::fs::File::create(&format!("{}/config.json", path)).unwrap();
             match file.write(b"{\n}\n"){
-                Err(_) => println!("FUCK SHIT FUCK"),
+                Err(_) => println!("Error creating configuration file config.json"),
                 Ok(_) => {}
             }
         }
@@ -33,7 +33,7 @@ impl Config {
         }
 
         match config.merge(config::Environment::with_prefix("APP")) {
-            Err(_) => println!("FUCKING BAD INSULT"),
+            Err(_) => println!("Error reading configuration file config.json"),
             Ok(_) => {}
         }
 

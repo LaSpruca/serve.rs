@@ -17,17 +17,17 @@ fn main() {
     let config = conf::Config::new();
     let listener = match TcpListener::bind(format!("{}:{}", config.ip, config.port)) {
         Ok(a) => a,
-        Err(_) => {println!("DUMB BITCH"); std::process::exit(69)}
+        Err(_) => {println!("Error binding to port"); std::process::exit(69)}
     };
 
     let pool = match ThreadPool::new(100) {
         Ok(a) => a,
-        Err(_) => {println!("FUCKING ASS HOLE"); std::process::exit(69);}
+        Err(_) => {println!("Error creating thread pool"); std::process::exit(69);}
     };
     println!("Started server on {}:{}", config.ip, config.port);
     for stream in listener.incoming() {
         match stream {
-            Err(_) => {println!("CONNECTION FUCKING FAILED");},
+            Err(_) => {println!("Connection failed");},
             Ok(a) => pool.execute(move || {
                 handle_connection(a, Config::new());
             })
@@ -50,13 +50,15 @@ fn handle_connection(mut stream: TcpStream, config: crate::conf::Config) {
 
     println!("[{}] {} requested {}", request.get_method(), stream.peer_addr().unwrap(), request.get_path());
 
+    println!("Accept: {}", request.get_value("Accept").unwrap());
+
     let cwd = std::env::current_dir().unwrap();
     let cwd2 = OsString::from(cwd);
     let path = cwd2.to_str().unwrap();
 
-    let requested = match request.get_value(String::from("Accept")) {
+    let requested = match request.get_value("Accept") {
         Some(a) => a,
-        None => {send_html_response("500 BITCH", errors::e_500(), &mut stream); return ()},
+        None => { send_text_response("500 BITCH", errors::e_500(), &mut stream, "text/html"); return ()},
     };
 
     if request.get_path() == String::from("/favicon.ico") {
@@ -80,56 +82,66 @@ fn handle_connection(mut stream: TcpStream, config: crate::conf::Config) {
 
     'yes: for kind in requested.split(",") {
         if kind == String::from("text/html") {
-            handle_html_file(&mut stream, &config, format!("{}", path), request);
+            handle_html_file(&mut stream, &config, format!("{}", path), &request);
             break 'yes;
+        }
+        if kind == String::from("text/css") {
+            handle_css_file(&mut stream, &config, format!("{}", path), &request);
         }
     }
 }
 
-fn handle_html_file(stream: &mut TcpStream, config: &Config, path: String, request: Request) {
+fn handle_css_file(stream: &mut TcpStream, config: &Config, path: String, request: &Request) {
+    let file = match std::fs::read_to_string(format!("{}/{}/{}", path, config.resource_location, request.get_path())) {
+        Ok(o) => o,
+        Err(_) => {send_404(stream, config, format!("{}", path)); return ()},
+    };
+    send_text_response("200 OK", file, stream, "text/css");
+}
+
+fn handle_html_file(stream: &mut TcpStream, config: &Config, path: String, request: &Request) {
     if request.get_path() == format!("/") {
         let file = match std::fs::read_to_string(format!("{}/{}/index.html", path, config.resource_location)) {
             Ok(o) => o,
             Err(_) => {send_404(stream, config, format!("{}", path)); return ()},
         };
-        send_html_response("200 OK", file, stream);
+        send_text_response("200 OK", file, stream, "text/html");
     } else if request.get_path().ends_with(&String::from("/")) {
         let file = match std::fs::read_to_string(format!("{}/{}/{}/index.html", path, config.resource_location, request.get_path())) {
             Ok(o) => o,
             Err(_) => {send_404(stream, config, format!("{}", path)); return ()},
         };
-        send_html_response("200 OK", file, stream);
+        send_text_response("200 OK", file, stream, "text/html");
     } else {
         let file = match std::fs::read_to_string(format!("{}/{}/{}", path, config.resource_location, request.get_path())) {
             Ok(o) => o,
             Err(_) => {send_404(stream, config, format!("{}", path)); return ()},
         };
-
-        send_html_response("200 OK", file, stream);
+        send_text_response("200 OK", file, stream, "text/html");
     }
 }
 
 fn send_404 (stream: &mut TcpStream, config: &Config, path: String){
     if config.default_errors {
-        send_html_response("404 NOT FOUND", errors::e_404(), stream);
+        send_text_response("404 NOT FOUND", errors::e_404(), stream, "text/html");
     } else {
         let file = match std::fs::read_to_string(format!("{}/{}/404.html", path, config.resource_location)) {
             Ok(a) => a,
-            Err(_) => {send_html_response("404 NOT FOUND", errors::e_404(),stream); return ()},
+            Err(_) => { send_text_response("404 NOT FOUND", errors::e_404(), stream, "text/html"); return ()},
         };
-        send_html_response("404 NOT FOUND", file, stream)
+        send_text_response("404 NOT FOUND", file, stream, "text/html")
     }
 }
 
 fn send_500 (stream: &mut TcpStream, config: &Config, path: String){
     if config.default_errors {
-        send_html_response("500 INTERNAL ERROR", errors::e_500(), stream);
+        send_text_response("500 INTERNAL ERROR", errors::e_500(), stream, "text/html");
     } else {
         let file = match std::fs::read_to_string(format!("{}/{}/500.html", path, config.resource_location)) {
             Ok(a) => a,
-            Err(_) => {send_html_response("500 INTERNAL ERROR", errors::e_404(),stream); return ()},
+            Err(_) => { send_text_response("500 INTERNAL ERROR", errors::e_404(), stream, "text/html"); return ()},
         };
-        send_html_response("500 INTERNAL ERROR", file, stream)
+        send_text_response("500 INTERNAL ERROR", file, stream, "text/html")
     }
 }
 
@@ -159,12 +171,12 @@ fn send_image_response (response_header: &str, image: Vec<u8>, stream: &mut TcpS
     println!("Sent response");
 }
 
-fn send_html_response (response_header: &str, body: String, stream: &mut TcpStream) {
+fn send_text_response(response_header: &str, body: String, stream: &mut TcpStream, content_type: &str) {
     let date = chrono::Utc::now();
 
     let header =
-        format!("Content-Type: text/html\nContent-Length: {}\nDate: {}\nServer: \"serve.rs 1.0 WindowsNT\"\n",
-            body.as_bytes().len(), date.format("%a, %b %e %Y %T GMT+12"));
+        format!("Content-Type: {}\nContent-Length: {}\nDate: {}\nServer: \"serve.rs 1.0 WindowsNT\"\n",
+            content_type, body.as_bytes().len(), date.format("%a, %b %e %Y %T GMT+12"));
 
     let response = format!("HTTP/1.1 {}\r\n{}\r\n{}", response_header, header, body);
 
