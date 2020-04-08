@@ -1,4 +1,6 @@
-htdocs-root: "www"
-server-address: "127.0.0.1"
-server-port: "80"
-builtin-error-404: "true"
+{
+  "htdocs-root": "www",
+  "server-address": "127.0.0.1",
+  "server-port": "80",
+  "use-builtin-error-pages": false
+}
