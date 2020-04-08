@@ -8,7 +8,6 @@ mod errors;
 use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
 use crate::thread_pool::ThreadPool;
-use std::fs::read_to_string;
 use crate::conf::Config;
 use std::ffi::OsString;
 use crate::request::Request;
@@ -55,16 +54,10 @@ fn handle_connection(mut stream: TcpStream, config: crate::conf::Config) {
     let cwd2 = OsString::from(cwd);
     let path = cwd2.to_str().unwrap();
 
-    for (k, _) in request.get_body() {
-        println!("{}", k);
-    };
-
     let requested = match request.get_value(String::from("Accept")) {
         Some(a) => a,
         None => {send_html_response("500 BITCH", errors::e_500(), &mut stream); return ()},
     };
-
-    println!("{}", requested);
 
     if request.get_path() == String::from("/favicon.ico") {
         let file = fs::File::open(&format!("{}/{}/favicon.ico", path, config.resource_location));
@@ -86,7 +79,6 @@ fn handle_connection(mut stream: TcpStream, config: crate::conf::Config) {
     }
 
     'yes: for kind in requested.split(",") {
-        println!("Kind: {}", kind);
         if kind == String::from("text/html") {
             handle_html_file(&mut stream, &config, format!("{}", path), request);
             break 'yes;
@@ -96,7 +88,6 @@ fn handle_connection(mut stream: TcpStream, config: crate::conf::Config) {
 
 fn handle_html_file(stream: &mut TcpStream, config: &Config, path: String, request: Request) {
     if request.get_path() == format!("/") {
-        println!("Getting index from {}", format!("{}/{}/index.html", path, config.resource_location));
         let file = match std::fs::read_to_string(format!("{}/{}/index.html", path, config.resource_location)) {
             Ok(o) => o,
             Err(_) => {send_404(stream, config, format!("{}", path)); return ()},
@@ -113,30 +104,32 @@ fn handle_html_file(stream: &mut TcpStream, config: &Config, path: String, reque
             Ok(o) => o,
             Err(_) => {send_404(stream, config, format!("{}", path)); return ()},
         };
+
+        send_html_response("200 OK", file, stream);
     }
 }
 
 fn send_404 (stream: &mut TcpStream, config: &Config, path: String){
     if config.default_errors {
-        send_html_response("404 FUCKING CUNT", errors::e_404(), stream);
+        send_html_response("404 NOT FOUND", errors::e_404(), stream);
     } else {
         let file = match std::fs::read_to_string(format!("{}/{}/404.html", path, config.resource_location)) {
             Ok(a) => a,
-            Err(_) => {send_html_response("404 FUCKING CUNT", errors::e_404(),stream); return ()},
+            Err(_) => {send_html_response("404 NOT FOUND", errors::e_404(),stream); return ()},
         };
-        send_html_response("404 FUCKING CUNT", file, stream)
+        send_html_response("404 NOT FOUND", file, stream)
     }
 }
 
 fn send_500 (stream: &mut TcpStream, config: &Config, path: String){
     if config.default_errors {
-        send_html_response("500 FUCKING CUNT", errors::e_500(), stream);
+        send_html_response("500 INTERNAL ERROR", errors::e_500(), stream);
     } else {
         let file = match std::fs::read_to_string(format!("{}/{}/500.html", path, config.resource_location)) {
             Ok(a) => a,
-            Err(_) => {send_html_response("500 FUCKING NIGGA", errors::e_404(),stream); return ()},
+            Err(_) => {send_html_response("500 INTERNAL ERROR", errors::e_404(),stream); return ()},
         };
-        send_html_response("500 FUCKING NIGGA", file, stream)
+        send_html_response("500 INTERNAL ERROR", file, stream)
     }
 }
 
@@ -150,17 +143,17 @@ fn send_image_response (response_header: &str, image: Vec<u8>, stream: &mut TcpS
     let response = format!("HTTP/1.1 {}\r\n{}\r\n", response_header, header);
 
     match stream.write(response.as_bytes()) {
-        Err(_) => {println!("FUCK FUCK FUCK FUCK"); return ();},
+        Err(_) => {println!("Error sending response"); return ();},
         Ok(_) => {}
     };
 
     match stream.write(image.as_slice()) {
-        Err(_) => {println!("FUCK FUCK FUCK FUCK"); return ();},
+        Err(_) => {println!("Error sending response"); return ();},
         Ok(_) => {}
     };
 
     match stream.flush(){
-        Err(_) => {println!("FUCK FUCK FUCK FUCK"); return ();},
+        Err(_) => {println!("Error sending response"); return ();},
         Ok(_) => {}
     };
     println!("Sent response");
@@ -176,11 +169,11 @@ fn send_html_response (response_header: &str, body: String, stream: &mut TcpStre
     let response = format!("HTTP/1.1 {}\r\n{}\r\n{}", response_header, header, body);
 
     match stream.write(response.as_bytes()) {
-        Err(_) => {println!("FUCK FUCK FUCK FUCK"); return ();},
+        Err(_) => {println!("Error sending response"); return ();},
         Ok(_) => {}
     };
     match stream.flush(){
-        Err(_) => {println!("FUCK FUCK FUCK FUCK"); return ();},
+        Err(_) => {println!("Error sending response"); return ();},
         Ok(_) => {}
     };
     println!("Sent response");

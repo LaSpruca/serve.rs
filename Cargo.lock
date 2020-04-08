@@ -64,14 +64,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "insult-webserver"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "config",
-]
-
-[[package]]
 name = "itoa"
 version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -273,6 +265,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "110b3dbdf8607ec493c22d5d947753282f3bae73c0f56d322af1e8c78e4c23d5"
 dependencies = [
  "serde 0.8.23",
+]
+
+[[package]]
+name = "serve_rs"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "config",
 ]
 
 [[package]]

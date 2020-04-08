@@ -17,8 +17,8 @@ impl Config {
         let cwd2 = OsString::from(cwd);
         let path = cwd2.to_str().unwrap();
 
-        if !std::fs::metadata(&format!("{}/insult.json", path)).is_ok() {
-            let mut file = std::fs::File::create(&format!("{}/insult.json", path)).unwrap();
+        if !std::fs::metadata(&format!("{}/config.json", path)).is_ok() {
+            let mut file = std::fs::File::create(&format!("{}/config.json", path)).unwrap();
             match file.write(b"{\n}\n"){
                 Err(_) => println!("FUCK SHIT FUCK"),
                 Ok(_) => {}
@@ -27,8 +27,8 @@ impl Config {
 
         // Getting the config file
         let mut config = config::Config::default();
-        match config.merge(File::with_name("insult")) {
-            Err(_) => println!("FUCKING BAD INSULT"),
+        match config.merge(File::with_name("config")) {
+            Err(_) => println!("Error reading configuration file config.json"),
             Ok(_) => {}
         }
 

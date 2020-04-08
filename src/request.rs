@@ -53,7 +53,7 @@ impl Request {
         let mut body = HashMap::new();
 
         for s in split_request {
-            let mut k_v: Vec<&str> = s.split(": ").collect();
+            let k_v: Vec<&str> = s.split(": ").collect();
             if k_v.len() > 1 {
                 body.insert(format!("{}", k_v[0]), format!("{}", k_v[1]));
             }
