@@ -137,7 +137,7 @@ fn send_image_response (response_header: &str, image: Vec<u8>, stream: &mut TcpS
     let date = chrono::Utc::now();
 
     let header =
-        format!("Content-Type: {}\nContent-Length: {}\nDate: {}\nServer: \"insults 1.0 WindowsNT\"\n", content_type,
+        format!("Content-Type: {}\nContent-Length: {}\nDate: {}\nServer: \"serve.rs 1.0 WindowsNT\"\n", content_type,
                 image.len(), date.format("%a, %b %e %Y %T GMT+12"));
 
     let response = format!("HTTP/1.1 {}\r\n{}\r\n", response_header, header);
@@ -163,7 +163,7 @@ fn send_html_response (response_header: &str, body: String, stream: &mut TcpStre
     let date = chrono::Utc::now();
 
     let header =
-        format!("Content-Type: text/html\nContent-Length: {}\nDate: {}\nServer: \"insults 1.0 WindowsNT\"\n",
+        format!("Content-Type: text/html\nContent-Length: {}\nDate: {}\nServer: \"serve.rs 1.0 WindowsNT\"\n",
             body.as_bytes().len(), date.format("%a, %b %e %Y %T GMT+12"));
 
     let response = format!("HTTP/1.1 {}\r\n{}\r\n{}", response_header, header, body);
