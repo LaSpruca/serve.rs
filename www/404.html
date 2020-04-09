@@ -32,9 +32,48 @@
     }
 </style>
 <div class="error">
+    
     <h1>Error 404</h1>
-    <h3>Page Not Found</h3>
+    <h2 id="InsultText"></h1>
+    
     <p>Powered By insults</p>
 </div>
 </body>
+<iframe id="frmFile" src="404InsultList.txt" onload="LoadFile();" style="display: none;"></iframe>
+<script>
+    function LoadFile() {
+	    var oFrame = document.getElementById("frmFile");
+	    var strRawContents = oFrame.contentWindow.document.body.innerHTML;
+	    while (strRawContents.indexOf("\r") >= 0)
+	        strRawContents = strRawContents.replace("\r", "");
+	    var arrLines = strRawContents.split("\n");
+        var urlString = window.location.href;
+        var urlSeed = 0;
+        var i;
+        for (i = 0; i < urlString.length; i++) {
+            urlSeed += urlString.charCodeAt(i);
+        }
+        
+        randomNumString1 = randomFromSeed(urlSeed).toFixed(20).replace(/\.?0+$/,"");
+        randomNumString2 = randomFromSeed(urlSeed*Math.PI).toFixed(20).replace(/\.?0+$/,"");
+        
+        randomNum1 = randomNumString1.substring(randomNumString1.length-6,randomNumString1.length-3);
+        randomNum2 = randomNumString2.substring(randomNumString2.length-6,randomNumString2.length-3);
+        randomLineNum1 = Math.round((randomNum1 * 465) / 999);
+        randomLineNum2 = Math.round((randomNum2 * 465) / 999);
+        var FinalInsultText = "You "+ arrLines[randomLineNum1].toString().toLowerCase();
+        if (!(arrLines[randomLineNum1].indexOf(' ') >= 0)){
+            FinalInsultText += " "+ arrLines[randomLineNum2].toString().toLowerCase();
+        }
+        FinalInsultText +=  ", the page doesn't exist";
+        document.getElementById("InsultText").innerHTML = FinalInsultText;
+        
+        
+	}
+    function randomFromSeed(seed) {
+        var x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+    }
+    
+</script>
 </html>
